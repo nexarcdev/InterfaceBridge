@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NexArc.InterfaceBridge", "NexArc.InterfaceBridge\NexArc.InterfaceBridge.csproj", "{6077EF6C-7A0D-4E81-B935-30101309D93F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NexArc.InterfaceBridge.CodeGenerator", "NexArc.InterfaceBridge.CodeGenerator\NexArc.InterfaceBridge.CodeGenerator.csproj", "{627C073F-21BF-4896-A79A-7C2C4ADF967F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NexArc.InterfaceBridge.Server", "NexArc.InterfaceBridge.Server\NexArc.InterfaceBridge.Server.csproj", "{A3F20DAF-B035-4194-AFBB-311F56F5014D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6077EF6C-7A0D-4E81-B935-30101309D93F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6077EF6C-7A0D-4E81-B935-30101309D93F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6077EF6C-7A0D-4E81-B935-30101309D93F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6077EF6C-7A0D-4E81-B935-30101309D93F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{627C073F-21BF-4896-A79A-7C2C4ADF967F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{627C073F-21BF-4896-A79A-7C2C4ADF967F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{627C073F-21BF-4896-A79A-7C2C4ADF967F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{627C073F-21BF-4896-A79A-7C2C4ADF967F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3F20DAF-B035-4194-AFBB-311F56F5014D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3F20DAF-B035-4194-AFBB-311F56F5014D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3F20DAF-B035-4194-AFBB-311F56F5014D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3F20DAF-B035-4194-AFBB-311F56F5014D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

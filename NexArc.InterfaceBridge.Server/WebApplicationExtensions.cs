@@ -1,0 +1,59 @@
+﻿using System.Reflection;
+using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+
+namespace NexArc.InterfaceBridge.Server;
+
+public static class WebApplicationExtensions
+{
+    private record InterfaceBridgeDefinition(Type ManagerInterface, JsonSerializerOptions? JsonSerializerOptions);
+
+    public static WebApplicationBuilder UseInterfaceBridge<TManagerInterface, TManagerImplementation>(
+        this WebApplicationBuilder builder, JsonSerializerOptions? jsonSerializerOptions = null)
+        where TManagerImplementation : class, TManagerInterface
+        where TManagerInterface : class
+    {
+        builder.Services.AddSingleton(new InterfaceBridgeDefinition(typeof(TManagerInterface), jsonSerializerOptions));
+        builder.Services.AddScoped<TManagerInterface, TManagerImplementation>();
+
+        return builder;
+    }
+
+    public static WebApplication UseInterfaceBridges(this WebApplication app)
+    {
+        var bridges = app.Services.GetServices<InterfaceBridgeDefinition>();
+
+        var defaultJsonOptions = app.Services.GetService<IOptions<JsonOptions>>()?.Value.JsonSerializerOptions;
+
+        foreach (var bridge in bridges)
+        {
+            var jsonSerializerOptions = bridge.JsonSerializerOptions ?? defaultJsonOptions ?? JsonSerializerOptions.Web;
+
+            foreach (var method in bridge.ManagerInterface.GetMethods(BindingFlags.Instance | BindingFlags.Public))
+            {
+                RouteMapper.Map(app, bridge.ManagerInterface, method, jsonSerializerOptions);
+            }
+        }
+
+        return app;
+    }
+
+    public static WebApplication UseInterfaceBridge<TManagerInterface>(this WebApplication app,
+        JsonSerializerOptions? jsonSerializerOptions = null)
+        where TManagerInterface : class
+    {
+        if (jsonSerializerOptions == null)
+        {
+            var jsonOptions = app.Services.GetService<IOptions<JsonOptions>>();
+            jsonSerializerOptions = jsonOptions?.Value.JsonSerializerOptions;
+        }
+
+        foreach (var method in typeof(TManagerInterface).GetMethods(BindingFlags.Instance | BindingFlags.Public))
+        {
+            RouteMapper.Map(app, typeof(TManagerInterface), method, jsonSerializerOptions ?? JsonSerializerOptions.Web);
+        }
+
+        return app;
+    }
+}
