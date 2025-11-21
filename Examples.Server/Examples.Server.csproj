@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NexArc.InterfaceBridge.Server\NexArc.InterfaceBridge.Server.csproj" />
+    <ProjectReference Include="..\Examples.Shared\Examples.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
