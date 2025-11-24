@@ -1,4 +1,4 @@
-﻿using JetBrains.Annotations;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace NexArc.InterfaceBridge;
 
@@ -24,14 +24,14 @@ namespace NexArc.InterfaceBridge;
 /// Auto will use MultipartFormData if FilePart is included, otherwise FormUrlEncoded.
 /// </param>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-public sealed class RestAttribute(HttpMethod method, [RouteTemplate] string route)
+public sealed class RestAttribute(HttpMethod method, [StringSyntax("Route")] string route)
     : Attribute
 {
     /// <summary>
     /// The route template specifying the endpoint for the RESTful method.
     /// This can include placeholders for parameters or represent a static URL path.
     /// </summary>
-    [RouteTemplate]
+    [StringSyntax("Route")] 
     public string Route { get; } = route;
 
     /// <summary>
@@ -47,7 +47,7 @@ public sealed class RestAttribute(HttpMethod method, [RouteTemplate] string rout
 };
 
 [AttributeUsage(AttributeTargets.Interface)]
-public sealed class RestConnectorAttribute([RouteTemplate] string routePrefix) : Attribute
+public sealed class RestConnectorAttribute([StringSyntax("Route")] string routePrefix) : Attribute
 {
-    [RouteTemplate] public string RoutePrefix { get; } = routePrefix;
+    [StringSyntax("Route")]  public string RoutePrefix { get; } = routePrefix;
 }
