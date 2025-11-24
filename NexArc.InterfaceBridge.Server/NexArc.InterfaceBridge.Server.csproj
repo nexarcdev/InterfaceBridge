@@ -15,11 +15,14 @@
         <Description>Server-side implementation for NexArc.InterfaceBridge, providing automatic REST API routing from interface definitions</Description>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/nexarcdev/InterfaceBridge</RepositoryUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
 
     <ItemGroup>
+        <None Include="..\README.md" Pack="true" PackagePath="\"/>
         <ProjectReference Include="..\NexArc.InterfaceBridge\NexArc.InterfaceBridge.csproj"/>
     </ItemGroup>
-    
+
 </Project>

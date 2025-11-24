@@ -15,10 +15,13 @@
         <Description>Core attributes and types for NexArc.InterfaceBridge, enabling interface-based REST API contracts</Description>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/nexarcdev/InterfaceBridge</RepositoryUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
 
     <ItemGroup>
+        <None Include="..\README.md" Pack="true" PackagePath="\"/>
         <PackageReference Include="JetBrains.Annotations" Version="2025.2.0"/>
     </ItemGroup>
 </Project>

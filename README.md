@@ -17,13 +17,12 @@ A type-safe, interface-based REST API framework for .NET that creates tightly co
 Install the NuGet packages:
 
 ```bash
-# For shared interface definitions
-dotnet add package NexArc.InterfaceBridge
-
 # For server-side implementation
+dotnet add package NexArc.InterfaceBridge
 dotnet add package NexArc.InterfaceBridge.Server
 
 # For client-side code generation
+dotnet add package NexArc.InterfaceBridge
 dotnet add package NexArc.InterfaceBridge.CodeGenerator
 ```
 

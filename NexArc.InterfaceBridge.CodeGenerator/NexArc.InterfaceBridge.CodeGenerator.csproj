@@ -18,11 +18,14 @@
         <Description>Source generator for NexArc.InterfaceBridge that generates client code from interface definitions</Description>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/nexarcdev/InterfaceBridge</RepositoryUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
 
     <ItemGroup>
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+        <None Include="..\README.md" Pack="true" PackagePath="\"/>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" Version="5.0.0"/>
     </ItemGroup>
 
