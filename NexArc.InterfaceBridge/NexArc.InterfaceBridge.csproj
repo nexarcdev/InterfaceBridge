@@ -6,6 +6,16 @@
         <LangVersion>preview</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+
+        <!-- NuGet Package Metadata -->
+        <PackageId>NexArc.InterfaceBridge</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>NexArc</Authors>
+        <Company>NexArc</Company>
+        <Description>Core attributes and types for NexArc.InterfaceBridge, enabling interface-based REST API contracts</Description>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryType>git</RepositoryType>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
 
     <ItemGroup>
