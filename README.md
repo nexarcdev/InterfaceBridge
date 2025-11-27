@@ -103,6 +103,7 @@ For iOS and other AOT platforms, use `JsonSerializable` partial classes:
 ```csharp
 using System.Text.Json.Serialization;
 
+[JsonSourceGenerationOptions(WriteIndented = true)] 
 [JsonSerializable(typeof(YourResponseType))]
 [JsonSerializable(typeof(YourRequestType))]
 public partial class AppJsonContext : JsonSerializerContext { }

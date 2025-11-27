@@ -11,7 +11,9 @@ public static class ClientSourceBuilder
         var sb = new StringBuilder();
 
         sb.AppendLine($"#nullable enable").AppendLine();
-        sb.AppendLine($"namespace {clientDefinition.ClientType.ContainingNamespace.ToDisplayString()};").AppendLine();
+        
+        if (clientDefinition.ClientType.ContainingNamespace is { IsGlobalNamespace: false })
+            sb.AppendLine($"namespace {clientDefinition.ClientType.ContainingNamespace.ToDisplayString()};").AppendLine();
 
         foreach (var bridge in clientDefinition.Bridges)
             bridge.BuildSource(sb);

@@ -106,7 +106,7 @@ public class Method
         var hasBodyParameters = Parameters.Any(x => !x.IsInRoute && !x.IsFilePart);
 
         sb.Append(
-                "        var request = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.")
+                "        var _request = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.")
             .AppendLine(hasRouteParameters
                 ? $"{HttpMethod}, $\"{Route}\");"
                 : $"{HttpMethod}, \"{Route}\");");
@@ -115,18 +115,18 @@ public class Method
         {
             if (RequestBodyType == BodyType.FormUrlEncoded)
             {
-                sb.AppendLine("        request.Content = new global::System.Net.Http.FormUrlEncodedContent([");
+                sb.AppendLine("        _request.Content = new global::System.Net.Http.FormUrlEncodedContent([");
                 AppendFormUrlEncodedContent("            ");
                 sb.AppendLine("        ]);");
             }
             else if (RequestBodyType == BodyType.MultipartFormData)
             {
-                sb.AppendLine("        var content = new global::System.Net.Http.MultipartFormDataContent();");
+                sb.AppendLine("        var _content = new global::System.Net.Http.MultipartFormDataContent();");
 
                 foreach (var parameter in Parameters.Where(x => x is { IsFilePart: false, IsInRoute: false, IsCancellationToken: false }))
                     sb.Append("        ")
                         .AppendLine(
-                            $"content.Add(new global::System.Net.Http.StringContent({parameter.Serializer}), \"{parameter.Name}\");");
+                            $"_content.Add(new global::System.Net.Http.StringContent({parameter.Serializer}), \"{parameter.Name}\");");
 
                 if (hasFileParameters)
                 {
@@ -138,12 +138,12 @@ public class Method
                                       if (!string.IsNullOrWhiteSpace({{parameter}}.ContentType))
                                           _{{parameter}}.Headers.ContentType = global::System.Net.Http.Headers.MediaTypeHeaderValue.Parse({{parameter}}.ContentType);
                                       _{{parameter}}.Headers.ContentLength = {{parameter}}.Length;
-                                      content.Add(_{{parameter}}, "{{parameter}}", {{parameter}}.FileName ?? "{{parameter}}");
+                                      _content.Add(_{{parameter}}, "{{parameter}}", {{parameter}}.FileName ?? "{{parameter}}");
                               """);
                     }
                 }
 
-                sb.AppendLine("        request.Content = content;");
+                sb.AppendLine("        request.Content = _content;");
             }
         }
 
@@ -161,8 +161,8 @@ public class Method
     {
         var cancellationToken = Parameters.FirstOrDefault(x => x.IsCancellationToken)?.Name ?? "CancellationToken.None";
 
-        sb.AppendLine($"        var response = await this.HttpClient.SendAsync(request, {cancellationToken});");
-        sb.AppendLine("        response.EnsureSuccessStatusCode();");
+        sb.AppendLine($"        var _response = await this.HttpClient.SendAsync(_request, {cancellationToken});");
+        sb.AppendLine("        _response.EnsureSuccessStatusCode();");
 
         if (string.IsNullOrWhiteSpace(ReturnType))
             return;
@@ -173,16 +173,16 @@ public class Method
                 $$"""
                           return new {{ClientDefinition.FilePartTypeName}}()
                           {
-                              ContentType = response.Content.Headers.ContentType?.ToString(),
-                              Content = new MemoryStream(await response.Content.ReadAsByteArrayAsync({{cancellationToken}})),
-                              FileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"'),
-                              Length = response.Content.Headers.ContentLength
+                              ContentType = _response.Content.Headers.ContentType?.ToString(),
+                              Content = new MemoryStream(await _response.Content.ReadAsByteArrayAsync({{cancellationToken}})),
+                              FileName = _response.Content.Headers.ContentDisposition?.FileName?.Trim('"'),
+                              Length = _response.Content.Headers.ContentLength
                           };
                   """);
         }
         else
         {
-            sb.AppendLine($"        var responseContent = await response.Content.ReadAsStringAsync({cancellationToken});");
+            sb.AppendLine($"        var _responseContent = await _response.Content.ReadAsStringAsync({cancellationToken});");
             sb.Append($"        return {ReturnTypeSerializer}".TrimEnd());
             if (ReturnTypeNullProtection)
                 sb.AppendLine()
@@ -197,23 +197,26 @@ public class Method
         if (returnSymbol is null || string.IsNullOrEmpty(ReturnType)) return null;
 
         if (ReturnType == "string")
-            return "responseContent";
+            return "_responseContent";
         
+        if (string.IsNullOrEmpty(Bridge.JsonSerializerContext)) 
+            return $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(_responseContent)";
+
         if (!ClientDefinition.BuildInTypes.Contains(ReturnType!.TrimEnd('?')))
         {
             if (ReturnType.StartsWith(ClientDefinition.JsonPatchDocumentTypeName))
                 return
-                    $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(responseContent, {Bridge.JsonSerializerContext}.Default.JsonPatchDocument)";
+                    $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(_responseContent, {Bridge.JsonSerializerContext}.Default.JsonPatchDocument)";
 
             if (returnSymbol.Kind == SymbolKind.ArrayType &&
                 returnSymbol is IArrayTypeSymbol arrayTypeSymbol)
                 return
-                    $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(responseContent, {Bridge.JsonSerializerContext}.Default.{arrayTypeSymbol.ElementType.Name}Array)";
+                    $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(_responseContent, {Bridge.JsonSerializerContext}.Default.{arrayTypeSymbol.ElementType.Name}Array)";
 
             return
-                $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(responseContent, {Bridge.JsonSerializerContext}.Default.{returnSymbol.Name})";
+                $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(_responseContent, {Bridge.JsonSerializerContext}.Default.{returnSymbol.Name})";
         }
 
-        return $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(responseContent, {Bridge.JsonSerializerContext}.Default.Options)";
+        return $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(_responseContent, {Bridge.JsonSerializerContext}.Default.Options)";
     }
 }
