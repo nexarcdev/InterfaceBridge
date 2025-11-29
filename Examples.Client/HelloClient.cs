@@ -4,7 +4,7 @@ using NexArc.InterfaceBridge;
 namespace Examples.Client;
 
 [Bridge(typeof(IHelloApi))]
-public partial class HelloClient : IHelloApi
+public partial class HelloClient
 {
     public HttpClient HttpClient { get; }
 

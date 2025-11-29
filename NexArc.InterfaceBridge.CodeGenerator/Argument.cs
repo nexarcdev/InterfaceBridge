@@ -32,24 +32,22 @@ public class Argument
 
         if (Type == "string")
             return Name;
-
+        
         if (!ClientDefinition.BuildInTypes.Contains(Type.TrimEnd('?')))
         {
+            if (string.IsNullOrEmpty(method.Bridge.JsonSerializerContext))
+                return $"global::System.Text.Json.JsonSerializer.Serialize({Name})";
+
             if (Type == ClientDefinition.JsonPatchDocumentTypeName)
-                return
-                    $"global::System.Text.Json.JsonSerializer.Serialize({Name}, {method.Bridge.JsonSerializerContext}.Default.JsonPatchDocument{Type})";
+                return $"global::System.Text.Json.JsonSerializer.Serialize({Name}, {method.Bridge.JsonSerializerContext}.Default.JsonPatchDocument{Type})";
 
             if (Type.StartsWith(ClientDefinition.JsonPatchDocumentTypeName))
-                return
-                    $"global::System.Text.Json.JsonSerializer.Serialize({Name}, {method.Bridge.JsonSerializerContext}.Default.JsonPatchDocument{SubType})";
+                return $"global::System.Text.Json.JsonSerializer.Serialize({Name}, {method.Bridge.JsonSerializerContext}.Default.JsonPatchDocument{SubType})";
 
-            if (parameterSymbol.Type.Kind == SymbolKind.ArrayType &&
-                parameterSymbol.Type is IArrayTypeSymbol arrayTypeSymbol)
-                return
-                    $"global::System.Text.Json.JsonSerializer.Serialize({Name}, {method.Bridge.JsonSerializerContext}.Default.{arrayTypeSymbol.ElementType.Name}Array)";
+            if (parameterSymbol.Type.Kind == SymbolKind.ArrayType && parameterSymbol.Type is IArrayTypeSymbol arrayTypeSymbol)
+                return $"global::System.Text.Json.JsonSerializer.Serialize({Name}, {method.Bridge.JsonSerializerContext}.Default.{arrayTypeSymbol.ElementType.Name}Array)";
 
-            return
-                $"global::System.Text.Json.JsonSerializer.Serialize({Name}, {method.Bridge.JsonSerializerContext}.Default.{parameterSymbol.Type.Name})";
+            return $"global::System.Text.Json.JsonSerializer.Serialize({Name}, {method.Bridge.JsonSerializerContext}.Default.{parameterSymbol.Type.Name})";
         }
 
         return $"{Name}.ToString()";

@@ -11,12 +11,19 @@ var app = builder.Build();
 // Map routes based on interface methods
 app.UseInterfaceBridges();
 
-app.Run("http://localhost:5199");
+await app.RunAsync("http://localhost:5199");
 
 public class HelloApi : IHelloApi
 {
-    public Task<string> Greet(string name, CancellationToken cancellationToken = default)
+    public Task<GreetingResponse> Greet(string name, GreetingRequest request, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult($"Hello, {name}! Time: {DateTimeOffset.Now:O}");
+        return Task.FromResult(
+            new GreetingResponse 
+            {
+                Name = name,
+                Location = request.Location,
+                Greeting = $"Hello, {name} from {request.Location}! Time: {DateTimeOffset.Now:O}",
+            }
+        );
     }
 }

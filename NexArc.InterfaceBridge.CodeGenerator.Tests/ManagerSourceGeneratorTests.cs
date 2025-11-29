@@ -143,8 +143,15 @@ public class ManagerSourceGeneratorTests
 
             namespace Examples.Shared;
 
+            public class DataRequest  
+            {
+                public Guid RequestId { get; set; }
+                public string Query { get; set; }
+            }
+            
             public class DataObject 
             {
+                public Guid RequestId { get; set; }
                 public Guid Id { get; set; }
                 public string Name { get; set; }
             }
@@ -153,7 +160,7 @@ public class ManagerSourceGeneratorTests
             public interface IHelloApi
             {
                 [Rest(NexArc.InterfaceBridge.HttpMethod.Get, "data")]
-                Task<DataObject[]> GetData(CancellationToken cancellationToken = default);
+                Task<DataObject[]> GetData(DataRequest request, CancellationToken cancellationToken = default);
 
                 [Rest(NexArc.InterfaceBridge.HttpMethod.Get, "data/{id:guid}")]
                 Task<DataObject> GetData(Guid id, CancellationToken cancellationToken = default);
