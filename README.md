@@ -98,16 +98,24 @@ Console.WriteLine(result); // Output: Hello, World!
 
 ## AOT Support with System.Text.Json
 
-For iOS and other AOT platforms, use `JsonSerializable` partial classes:
+For iOS and other AOT platforms, use must use `JsonSerializable` for code generation. 
 
 ```csharp
+// CLIENT/SERVER SHARED 
 using System.Text.Json.Serialization;
 
-[JsonSourceGenerationOptions(WriteIndented = true)] 
+// Customize your serialization options (recommended)
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonConverter(typeof(JsonStringEnumConverter))]
+[JsonSourceGenerationOptions(WriteIndented = true)] // Debugging only 
+// List all of the return types and parameter types, arrays must be listed separately
 [JsonSerializable(typeof(YourResponseType))]
+[JsonSerializable(typeof(YourResponseType[]))]
 [JsonSerializable(typeof(YourRequestType))]
 public partial class AppJsonContext : JsonSerializerContext { }
 
+// CLIENT SIDE
+// Supply the JsonSerializerContext to the Bridge attribute
 [Bridge(typeof(IYourApi), JsonSerializerContext = typeof(AppJsonContext))]
 public partial class YourClient : IYourApi
 {
@@ -118,6 +126,13 @@ public partial class YourClient : IYourApi
         HttpClient = httpClient;
     }
 }
+
+// SERVER SIDE
+// Supply the JsonSerializerOptions to the InterfaceBridge
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddInterfaceBridge<IYourApi, YourApi>(jsonSerializerOptions: AppJsonContext.Default.Options);
+
+public class YourApi : IYourApi { /* ... */ }
 ```
 
 ## Attributes

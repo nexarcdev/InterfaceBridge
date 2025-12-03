@@ -14,6 +14,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Examples.Client", "Examples
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NexArc.InterfaceBridge.CodeGenerator.Tests", "NexArc.InterfaceBridge.CodeGenerator.Tests\NexArc.InterfaceBridge.CodeGenerator.Tests.csproj", "{53943B7C-3676-4220-8485-988D4AFACB66}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Examples.AppHost", "Examples.AppHost\Examples.AppHost.csproj", "{88A0DD53-52C8-4C1A-BF3B-1DB054186096}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Examples.ServiceDefaults", "Examples.ServiceDefaults\Examples.ServiceDefaults.csproj", "{1CD4D025-4B40-40A2-88C9-98E12343F394}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +52,13 @@ Global
 		{53943B7C-3676-4220-8485-988D4AFACB66}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{53943B7C-3676-4220-8485-988D4AFACB66}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{53943B7C-3676-4220-8485-988D4AFACB66}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88A0DD53-52C8-4C1A-BF3B-1DB054186096}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88A0DD53-52C8-4C1A-BF3B-1DB054186096}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88A0DD53-52C8-4C1A-BF3B-1DB054186096}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88A0DD53-52C8-4C1A-BF3B-1DB054186096}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1CD4D025-4B40-40A2-88C9-98E12343F394}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1CD4D025-4B40-40A2-88C9-98E12343F394}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1CD4D025-4B40-40A2-88C9-98E12343F394}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CD4D025-4B40-40A2-88C9-98E12343F394}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

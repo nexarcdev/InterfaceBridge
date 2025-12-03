@@ -1,15 +1,12 @@
+using System.Text.Json;
 using Examples.Shared;
 using NexArc.InterfaceBridge;
 
 namespace Examples.Client;
 
-[Bridge(typeof(IHelloApi))]
-public partial class HelloClient
+[Bridge<IHelloApi>]
+public partial class HelloClient(HttpClient httpClient)
 {
-    public HttpClient HttpClient { get; }
-
-    public HelloClient(HttpClient httpClient)
-    {
-        HttpClient = httpClient;
-    }
+    private HttpClient HttpClient { get; } = httpClient;
+    private JsonSerializerOptions JsonSerializerOptions { get; } = JsonSerializerOptions.Web;
 }

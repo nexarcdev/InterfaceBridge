@@ -1,15 +1,52 @@
+using System.Text.Json;
 using Examples.Client;
 using Examples.Shared;
+using Microsoft.AspNetCore.Mvc;
+using NexArc.InterfaceBridge;
 
-// Ensure the server from Examples.Server is running on http://localhost:5199
+var builder = WebApplication.CreateBuilder(args);
 
-var http = new HttpClient
+builder.AddServiceDefaults();
+
+builder.Services.AddHttpClient<HelloClient>(client => client.BaseAddress = new Uri("https+http://server"));
+builder.Services.AddHttpClient<TestClient>(client => client.BaseAddress = new Uri("https+http://server"));
+
+var app = builder.Build();
+
+app.MapDefaultEndpoints();
+
+app.MapGet("/", async ([FromServices]HelloClient client) => 
+    await client.Greet("World", new GreetingRequest() { Location = "Earth" }));
+
+app.MapGet("/test/1", async ([FromServices]TestClient client) =>
 {
-    BaseAddress = new Uri("http://localhost:5199/")
-};
+    var request = new TestRequest("Bob", 42, new PocoTest("Bobbie", 20));
+    return await client.Get(Guid.NewGuid(), TestEnum.B, request);
+});
 
-var client = new HelloClient(http);
+app.MapGet("/test/2", async ([FromServices]TestClient client) =>
+{
+    var request = new TestRequest("Bob", 42, new PocoTest("Bobbie", 20));
+    return await client.Get([request]);
+});
 
-var result = await client.Greet("World", new GreetingRequest() { Location = "Earth" });
+app.MapGet("/test/3", async ([FromServices]TestClient client) =>
+{
+    var request = new TestRequest("Bob", 42, new PocoTest("Bobbie", 20));
+    return await client.Post(Guid.NewGuid(), TestEnum.B, request);
+});
 
-Console.WriteLine(result);
+app.MapGet("/test/4", async ([FromServices]TestClient client) =>
+{
+    var file = new FilePart()
+    {
+        Content = new MemoryStream(),
+        ContentType = "image/png",
+        FileName = "nothing.png",
+        Length = 0
+    };
+    
+    return await client.Put(Guid.NewGuid(), file);
+});
+
+await app.RunAsync();

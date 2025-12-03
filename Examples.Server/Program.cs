@@ -1,29 +1,23 @@
+using System.Text.Json;
+using Examples.Server;
 using Examples.Shared;
 using NexArc.InterfaceBridge.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+
 // Register the InterfaceBridge for IHelloApi and its implementation
-builder.Services.AddInterfaceBridge<IHelloApi, HelloApi>();
+builder.Services.AddInterfaceBridge<IHelloApi, HelloApi>(jsonSerializerOptions: JsonSerializerOptions.Web);
+builder.Services.AddInterfaceBridge<ITestApi, TestApi>(jsonSerializerOptions: TestJsonContext.Default.Options);
 
 var app = builder.Build();
+
+app.MapDefaultEndpoints();
 
 // Map routes based on interface methods
 app.MapInterfaceBridges();
 
-await app.RunAsync("http://localhost:5199");
+app.MapGet("/", () => "Interface bridge is ready");
 
-public class HelloApi : IHelloApi
-{
-    public Task<GreetingResponse> Greet(string name, GreetingRequest request, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(
-            new GreetingResponse 
-            {
-                Name = name,
-                Location = request.Location,
-                Greeting = $"Hello, {name} from {request.Location}! Time: {DateTimeOffset.Now:O}",
-            }
-        );
-    }
-}
+await app.RunAsync();

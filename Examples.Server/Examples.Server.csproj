@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\NexArc.InterfaceBridge.Server\NexArc.InterfaceBridge.Server.csproj" />
     <ProjectReference Include="..\Examples.Shared\Examples.Shared.csproj" />
+    <ProjectReference Include="..\Examples.ServiceDefaults\Examples.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

@@ -53,13 +53,26 @@ public class Method
             x.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == FilePartName);
         IsReturnsFile = ReturnType == FilePartName;
 
-        if (RequestBodyType == BodyType.Auto)
-            RequestBodyType = IsAcceptsFile ? BodyType.MultipartFormData : BodyType.FormUrlEncoded;
+        if (HttpMethod == HttpMethod.Get)
+        {
+            if (RequestBodyType != BodyType.Auto)
+                throw new InvalidOperationException("GET requests require BodyType.Auto.");
+            
+            if (IsAcceptsFile)
+                throw new InvalidOperationException("GET requests do not support FilePart parameters.");
+        }
+        else
+        {
+            if (RequestBodyType == BodyType.Auto)
+                RequestBodyType = IsAcceptsFile ? BodyType.MultipartFormData : BodyType.FormUrlEncoded;
 
-        if (IsAcceptsFile && RequestBodyType != BodyType.MultipartFormData)
-            throw new InvalidOperationException(
-                "FilePart parameters require BodyType.Auto or BodyType.MultipartFormData.");
-
+            if (IsAcceptsFile && HttpMethod is not (HttpMethod.Post or HttpMethod.Put or HttpMethod.Patch))
+                throw new InvalidOperationException("FilePart parameters are only supported for POST, PUT, PATCH requests.");
+        
+            if (IsAcceptsFile && RequestBodyType != BodyType.MultipartFormData)
+                throw new InvalidOperationException("FilePart parameters require BodyType.Auto or BodyType.MultipartFormData.");
+        }
+        
         var routeParameters = ExtractRouteArguments(Route);
         Parameters = methodSymbol.Parameters.Select(x => new Argument(this, x, routeParameters)).ToArray();
     }
@@ -103,13 +116,30 @@ public class Method
     {
         var hasRouteParameters = Parameters.Any(x => x.IsInRoute);
         var hasFileParameters = Parameters.Any(x => x.IsFilePart);
-        var hasBodyParameters = Parameters.Any(x => !x.IsInRoute && !x.IsFilePart);
+        var hasOtherParameters = Parameters.Any(x => !x.IsInRoute && !x.IsFilePart && !x.IsCancellationToken);
+        var hasBodyParameters = HttpMethod != HttpMethod.Get && hasOtherParameters;
+        var hasQueryParameters = HttpMethod == HttpMethod.Get && hasOtherParameters;
 
-        sb.Append(
-                "        var _request = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.")
-            .AppendLine(hasRouteParameters
-                ? $"{HttpMethod}, $\"{Route}\");"
-                : $"{HttpMethod}, \"{Route}\");");
+        var route = hasRouteParameters
+            ? $"$\"{Route}\""
+            : $"\"{Route}\"";
+
+        if (hasQueryParameters)
+        {
+            sb.AppendLine($"        var _uri = new global::System.Text.StringBuilder({route});");
+                
+            var separator = Route.Contains("?") ? "&" : "?";
+            foreach (var parameter in Parameters.Where(x => !x.IsInRoute && !x.IsFilePart && !x.IsCancellationToken))
+            {
+                sb.AppendLine($"        _uri.AppendLine($\"{separator}{parameter.Name}={{(global::System.Uri.EscapeDataString({parameter.Serializer}))}}\");");
+                separator = "&";
+            }
+
+            route = "_uri.ToString()";
+        }
+        
+        sb.AppendLine(
+                $"        var _request = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.{HttpMethod}, {route});");
 
         if (hasBodyParameters || hasFileParameters)
         {
@@ -143,7 +173,7 @@ public class Method
                     }
                 }
 
-                sb.AppendLine("        request.Content = _content;");
+                sb.AppendLine("        _request.Content = _content;");
             }
         }
 
@@ -199,8 +229,11 @@ public class Method
         if (ReturnType == "string")
             return "_responseContent";
         
+        if (Bridge.HasJsonSerializerOptions)
+            return $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(_responseContent, this.JsonSerializerOptions)";
+        
         if (string.IsNullOrEmpty(Bridge.JsonSerializerContext)) 
-            return $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(_responseContent)";
+            return $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(_responseContent, global::System.Text.Json.JsonSerializerOptions.Web)";
 
         if (!ClientDefinition.BuildInTypes.Contains(ReturnType!.TrimEnd('?')))
         {

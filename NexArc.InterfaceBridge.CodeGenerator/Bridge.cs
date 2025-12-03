@@ -14,6 +14,7 @@ public class Bridge
     public INamedTypeSymbol BridgeType { get; }
     public Method[] Methods { get; }
     public string? RoutePrefix { get; }
+    public bool HasJsonSerializerOptions { get; }
 
     public Bridge(ClientDefinition clientDefinition, AttributeData bridge)
     {
@@ -33,6 +34,8 @@ public class Bridge
             ? ((INamedTypeSymbol)jsonSerializerContext.Value!).ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
             : null;
 
+        HasJsonSerializerOptions = !clientDefinition.ClientType.GetMembers("JsonSerializerOptions").IsDefaultOrEmpty;
+        
         Methods = GetMethods(BridgeType).Select(p => new Method(p, this)).ToArray();
     }
 

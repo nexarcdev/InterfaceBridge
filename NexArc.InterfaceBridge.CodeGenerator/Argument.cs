@@ -35,8 +35,11 @@ public class Argument
         
         if (!ClientDefinition.BuildInTypes.Contains(Type.TrimEnd('?')))
         {
+            if (method.Bridge.HasJsonSerializerOptions)
+                return $"global::System.Text.Json.JsonSerializer.Serialize({Name}, this.JsonSerializerOptions)";
+            
             if (string.IsNullOrEmpty(method.Bridge.JsonSerializerContext))
-                return $"global::System.Text.Json.JsonSerializer.Serialize({Name})";
+                return $"global::System.Text.Json.JsonSerializer.Serialize({Name}, global::System.Text.Json.JsonSerializerOptions.Web)";
 
             if (Type == ClientDefinition.JsonPatchDocumentTypeName)
                 return $"global::System.Text.Json.JsonSerializer.Serialize({Name}, {method.Bridge.JsonSerializerContext}.Default.JsonPatchDocument{Type})";

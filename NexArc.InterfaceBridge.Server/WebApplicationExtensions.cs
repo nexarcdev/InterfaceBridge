@@ -14,6 +14,7 @@ public static class WebApplicationExtensions
         where TManagerImplementation : class, TManagerInterface
         where TManagerInterface : class
     {
+        
         serviceCollection.AddSingleton(new InterfaceBridgeDefinition(typeof(TManagerInterface), jsonSerializerOptions));
         serviceCollection.AddScoped<TManagerInterface, TManagerImplementation>();
 
