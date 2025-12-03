@@ -1,4 +1,4 @@
-[![Publish NuGet Packages](https://github.com/nexarcdev/InterfaceBridge/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/nexarcdev/InterfaceBridge/actions/workflows/nuget-publish.yml)
+[![Publish NuGet Packages](https://github.com/nexarcdev/InterfaceBridge/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/nexarcdev/InterfaceBridge/actions/workflows/nuget-publish.yml) [![NuGet Package](https://img.shields.io/nuget/v/NexArc.InterfaceBridge.svg)](https://www.nuget.org/packages/NexArc.InterfaceBridge)
 
 # NexArc.InterfaceBridge
 
