@@ -12,7 +12,7 @@
 
         <!-- NuGet Package Metadata -->
         <PackageId>NexArc.InterfaceBridge.CodeGenerator</PackageId>
-        <Version>1.0.3</Version>
+        <Version>1.0.4</Version>
         <Authors>NexArc</Authors>
         <Company>NexArc</Company>
         <Description>Source generator for NexArc.InterfaceBridge that generates client code from interface definitions</Description>

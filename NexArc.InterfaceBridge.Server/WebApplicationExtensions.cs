@@ -9,18 +9,18 @@ public static class WebApplicationExtensions
 {
     private record InterfaceBridgeDefinition(Type ManagerInterface, JsonSerializerOptions? JsonSerializerOptions);
 
-    public static WebApplicationBuilder UseInterfaceBridge<TManagerInterface, TManagerImplementation>(
-        this WebApplicationBuilder builder, JsonSerializerOptions? jsonSerializerOptions = null)
+    public static IServiceCollection AddInterfaceBridge<TManagerInterface, TManagerImplementation>(
+        this IServiceCollection serviceCollection, JsonSerializerOptions? jsonSerializerOptions = null)
         where TManagerImplementation : class, TManagerInterface
         where TManagerInterface : class
     {
-        builder.Services.AddSingleton(new InterfaceBridgeDefinition(typeof(TManagerInterface), jsonSerializerOptions));
-        builder.Services.AddScoped<TManagerInterface, TManagerImplementation>();
+        serviceCollection.AddSingleton(new InterfaceBridgeDefinition(typeof(TManagerInterface), jsonSerializerOptions));
+        serviceCollection.AddScoped<TManagerInterface, TManagerImplementation>();
 
-        return builder;
+        return serviceCollection;
     }
 
-    public static WebApplication UseInterfaceBridges(this WebApplication app)
+    public static WebApplication MapInterfaceBridges(this WebApplication app)
     {
         var bridges = app.Services.GetServices<InterfaceBridgeDefinition>();
 
@@ -39,7 +39,7 @@ public static class WebApplicationExtensions
         return app;
     }
 
-    public static WebApplication UseInterfaceBridge<TManagerInterface>(this WebApplication app,
+    public static WebApplication MapInterfaceBridge<TManagerInterface>(this WebApplication app,
         JsonSerializerOptions? jsonSerializerOptions = null)
         where TManagerInterface : class
     {

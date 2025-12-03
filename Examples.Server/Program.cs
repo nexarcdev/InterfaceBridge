@@ -4,12 +4,12 @@ using NexArc.InterfaceBridge.Server;
 var builder = WebApplication.CreateBuilder(args);
 
 // Register the InterfaceBridge for IHelloApi and its implementation
-builder.UseInterfaceBridge<IHelloApi, HelloApi>();
+builder.Services.AddInterfaceBridge<IHelloApi, HelloApi>();
 
 var app = builder.Build();
 
 // Map routes based on interface methods
-app.UseInterfaceBridges();
+app.MapInterfaceBridges();
 
 await app.RunAsync("http://localhost:5199");
 

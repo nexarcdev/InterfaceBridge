@@ -18,8 +18,12 @@ public class Bridge
     public Bridge(ClientDefinition clientDefinition, AttributeData bridge)
     {
         ClientDefinition = clientDefinition;
-        BridgeType = (INamedTypeSymbol)bridge.ConstructorArguments[0].Value!;
 
+        if (bridge.AttributeClass!.IsGenericType)
+            BridgeType = (INamedTypeSymbol)bridge.AttributeClass.TypeArguments[0];
+        else
+            BridgeType = (INamedTypeSymbol)bridge.ConstructorArguments[0].Value!;
+        
         var restConnectorData = BridgeType.GetAttributes()
             .FirstOrDefault(a => a.AttributeClass?.Name == RestConnectorAttributeName);
         RoutePrefix = (string?)restConnectorData?.ConstructorArguments[0].Value;

@@ -26,7 +26,6 @@ public class ManagerSourceGeneratorTests
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
     }
     
-    
     [TestMethod]
     public void Namespace_Works()
     {
@@ -129,6 +128,56 @@ public class ManagerSourceGeneratorTests
         Assert.IsEmpty(outputCompilation.GetDiagnostics()); // Verify the compilation with the added source has no diagnostics
     }
 
+    [TestMethod]
+    public void GenericAttribute_Works()
+    {
+        // Create the 'input' compilation that the generator will act on
+        var inputCompilation = CreateCompilation(
+            """
+            using System.Net.Http;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using NexArc.InterfaceBridge;
+
+            [RestConnector("api/hello")]
+            public interface IHelloApi
+            {
+                [Rest(NexArc.InterfaceBridge.HttpMethod.Get, "greet/{name}")]
+                Task<string> Greet(string name, CancellationToken cancellationToken = default);
+            }
+
+            [Bridge<IHelloApi>]
+            public partial class HelloClient
+            {
+                public HttpClient HttpClient { get; }
+
+                public HelloClient(HttpClient httpClient)
+                {
+                    HttpClient = httpClient;
+                }
+            }
+            """);
+
+        var compilationDiagnostics = inputCompilation.GetDiagnostics();
+
+        // inputCompilation needs to build without errors
+        foreach (var error in compilationDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
+            Assert.Fail(error.ToString());
+
+        // Create an instance of the generator
+        var generator = new ManagerSourceGenerator();
+
+        // Create the driver that will control the generation, passing in our generator
+        // Run the generation pass
+        CSharpGeneratorDriver
+            .Create(generator)
+            .RunGeneratorsAndUpdateCompilation(inputCompilation, out var outputCompilation, out var diagnostics);
+
+        Assert.IsEmpty(diagnostics); // No diagnostics created by the generators
+        Assert.HasCount(2, outputCompilation.SyntaxTrees); // Two syntax trees: 'inputCompilation' and the one added by the generator
+        Assert.IsEmpty(outputCompilation.GetDiagnostics()); // Verify the compilation with the added source has no diagnostics
+    }
+    
     [TestMethod]
     public void Poco_Works()
     {

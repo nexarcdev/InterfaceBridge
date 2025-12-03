@@ -9,7 +9,7 @@
 
         <!-- NuGet Package Metadata -->
         <PackageId>NexArc.InterfaceBridge</PackageId>
-        <Version>1.0.3</Version>
+        <Version>1.0.4</Version>
         <Authors>NexArc</Authors>
         <Company>NexArc</Company>
         <Description>Core attributes and types for NexArc.InterfaceBridge, enabling interface-based REST API contracts</Description>
