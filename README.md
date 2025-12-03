@@ -1,3 +1,5 @@
+[![Publish NuGet Packages](https://github.com/nexarcdev/InterfaceBridge/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/nexarcdev/InterfaceBridge/actions/workflows/nuget-publish.yml)
+
 # NexArc.InterfaceBridge
 
 A type-safe, interface-based REST API framework for .NET that creates tightly coupled connections between client and server with full AOT (Ahead-of-Time) compilation support.
