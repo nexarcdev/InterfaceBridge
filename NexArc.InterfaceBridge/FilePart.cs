@@ -1,4 +1,6 @@
-﻿namespace NexArc.InterfaceBridge;
+﻿using System.IO.Enumeration;
+
+namespace NexArc.InterfaceBridge;
 
 /// <summary>
 /// Represents a file part used in multipart form data uploads.
@@ -37,4 +39,59 @@ public sealed class FilePart : IDisposable, IAsyncDisposable
     {
         await Content.DisposeAsync();
     }
+
+    public static FilePart CreateFromBase64(ReadOnlySpan<char> base64Content, string? fileName, string? contentType)
+    {
+        var maxLength = (int)Math.Ceiling(base64Content.Length / 3d) * 4;
+        var stream = new MemoryStream(maxLength);
+
+        if (Convert.TryFromBase64Chars(base64Content, stream.GetBuffer().AsSpan(), out var length))
+        {
+            stream.SetLength(length);
+            return Create(stream, fileName, contentType);
+        }
+
+        return new() { FileName = fileName, ContentType = contentType };
+    }
+
+    public static FilePart CreateFromBase64(string base64Content, string? fileName, string? contentType) =>
+        Create(Convert.FromBase64String(base64Content), fileName, contentType);
+
+    public static FilePart Create(Stream content, string? fileName, string? contentType) => new()
+    {
+        Content = content,
+        FileName = fileName,
+        Length = content.Length,
+        ContentType = contentType
+    };
+
+    private static Stream CopyStream(Stream stream)
+    {
+        var memoryStream = new MemoryStream();
+        stream.CopyTo(memoryStream);
+        memoryStream.Position = 0;
+        return memoryStream;
+    }
+    
+    private static async Task<Stream> CopyStreamAsync(Stream stream)
+    {
+        var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+        memoryStream.Position = 0;
+        return memoryStream;
+    }
+    
+    public static FilePart CreateCopy(Stream content, string? fileName, string? contentType) => 
+        Create(CopyStream(content), fileName, contentType);
+
+    public static async Task<FilePart> CreateCopyAsync(Stream content, string? fileName, string? contentType) => 
+        Create(await CopyStreamAsync(content), fileName, contentType);
+
+    public static FilePart Create(byte[] content, string? fileName, string? contentType) => new()
+    {
+        Content = new MemoryStream(content),
+        FileName = fileName,
+        Length = content.Length,
+        ContentType = contentType
+    };
 }

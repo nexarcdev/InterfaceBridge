@@ -173,6 +173,20 @@ Use `FilePart` for file uploads (automatically switches to multipart/form-data):
 Task<UploadResponse> UploadFile(string description, FilePart file, CancellationToken cancellationToken = default);
 ```
 
+InterfaceBridge takes ownership of the FilePart.Stream and is responsible for closing it.
+- On the client, the FilePart is disposed automatically when the request completes.
+- On the server, the FilePart is disposed after the request is processed.
+
+`FilePart.Create(Stream stream, string? fileName, string? contentType)` will take ownership of the provided stream.
+`FilePart.CreateCopy(Stream stream, string? fileName, string? contentType)` exists to create a copy of a stream for upload using `stream.CopyTo()`.
+
+NOTE: Some Blazor UI libraries require use of `FilePart.CreateCopy` when using `IBrowserFile`.
+```csharp
+    IBrowserFile uploadedImage;
+    using var uploadedStream = uploadedImage.OpenReadStream();
+    var filePart = await FilePart.CreateCopyAsync(uploadedStream);
+```
+
 ### Custom Body Types
 
 Override the default body type:
