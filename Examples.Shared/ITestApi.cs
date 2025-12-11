@@ -27,6 +27,9 @@ public interface ITestApi
 
     [Rest(HttpMethod.Put, "{id:guid}")]
     Task<Guid> Put(Guid id, FilePart file);
+    
+    [Rest(HttpMethod.Post, "test")]
+    Task<string> StringTest(string value);
 }
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]

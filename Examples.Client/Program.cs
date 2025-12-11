@@ -1,4 +1,4 @@
-using System.Text.Json;
+using System.Diagnostics;
 using Examples.Client;
 using Examples.Shared;
 using Microsoft.AspNetCore.Mvc;
@@ -47,6 +47,13 @@ app.MapGet("/test/4", async ([FromServices]TestClient client) =>
     };
     
     return await client.Put(Guid.NewGuid(), file);
+});
+
+app.MapGet("/test/5", async ([FromServices]TestClient client) =>
+{
+    var response = await client.StringTest("Hello, World!");
+    Debug.Assert(response == "World says hello!");
+    return Results.Text($"Response: {response}");
 });
 
 await app.RunAsync();

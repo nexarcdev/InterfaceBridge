@@ -29,7 +29,9 @@ public sealed class FilePart : IDisposable, IAsyncDisposable
     public string? ContentType { get; set; }
     public long? Length { get; set; }
     public Stream Content { get; set; } = Stream.Null;
-
+    public DateTime LastModifiedUtc { get; set; }
+    public string? ETag { get; set; }
+    
     public void Dispose()
     {
         Content.Dispose();

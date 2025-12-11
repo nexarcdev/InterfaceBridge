@@ -82,23 +82,27 @@ public static partial class RouteMapper
             {
                 var taskResult = returnType.GetProperty("Result")!.GetValue(task);
 
-                if (taskResult is FilePart filePart)
-                {
-                    context.Response.ContentType = filePart.ContentType;
-                    context.Response.ContentLength = filePart.Length;
-                    await filePart.Content.CopyToAsync(context.Response.BodyWriter);
-                }
-                else
-                {
-                    context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsJsonAsync(taskResult, jsonSerializerOptions);
-                }
-
+                await SetResponseContent(jsonSerializerOptions, taskResult, context);
                 return;
             }
 
             // Otherwise return OK
             context.Response.StatusCode = 204;
+        }
+    }
+
+    private static async Task SetResponseContent(JsonSerializerOptions jsonSerializerOptions, object? result, HttpContext context)
+    {
+        if (result is FilePart filePart)
+        {
+            context.Response.ContentType = filePart.ContentType;
+            context.Response.ContentLength = filePart.Length;
+            await filePart.Content.CopyToAsync(context.Response.BodyWriter);
+        }
+        else
+        {
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(result, jsonSerializerOptions);
         }
     }
 

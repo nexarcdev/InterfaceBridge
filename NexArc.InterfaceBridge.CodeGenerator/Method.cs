@@ -168,6 +168,9 @@ public class Method
                                       if (!string.IsNullOrWhiteSpace({{parameter}}.ContentType))
                                           _{{parameter}}.Headers.ContentType = global::System.Net.Http.Headers.MediaTypeHeaderValue.Parse({{parameter}}.ContentType);
                                       _{{parameter}}.Headers.ContentLength = {{parameter}}.Length;
+                                      _{{parameter}}.Headers.LastModified = {{parameter}}.LastModifiedUtc;
+                                      if (!string.IsNullOrWhiteSpace({{parameter}}.ETag))
+                                          _{{parameter}}.Headers.Add("ETag", {{parameter}}.ETag);
                                       _content.Add(_{{parameter}}, "{{parameter}}", {{parameter}}.FileName ?? "{{parameter}}");
                               """);
                     }
@@ -206,7 +209,9 @@ public class Method
                               ContentType = _response.Content.Headers.ContentType?.ToString(),
                               Content = new MemoryStream(await _response.Content.ReadAsByteArrayAsync({{cancellationToken}})),
                               FileName = _response.Content.Headers.ContentDisposition?.FileName?.Trim('"'),
-                              Length = _response.Content.Headers.ContentLength
+                              Length = _response.Content.Headers.ContentLength,
+                              ETag = _response.Content.Headers.TryGetValues("ETag", out var _etag) ? _etag : null,
+                              LastModifiedUtc = _response.Content.Headers.LastModified?.UtcDateTime,
                           };
                   """);
         }
@@ -226,9 +231,9 @@ public class Method
     {
         if (returnSymbol is null || string.IsNullOrEmpty(ReturnType)) return null;
 
-        if (ReturnType == "string")
-            return "_responseContent";
-        
+        // if (ReturnType == "string")
+        //     return "_responseContent";
+        //
         if (Bridge.HasJsonSerializerOptions)
             return $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(_responseContent, this.JsonSerializerOptions)";
         

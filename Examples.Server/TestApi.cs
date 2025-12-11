@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Net.Http.Headers;
 using Examples.Shared;
 using NexArc.InterfaceBridge;
 
@@ -18,4 +20,10 @@ public class TestApi : ITestApi
 
     public Task<Guid> Put(Guid id, FilePart file) => 
         Task.FromResult(id);
+
+    public Task<string> StringTest(string value)
+    {
+        Debug.Assert(value == "Hello, World!");
+        return Task.FromResult("World says hello!");
+    }
 }
