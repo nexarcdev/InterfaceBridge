@@ -210,7 +210,7 @@ public class Method
                               Content = new MemoryStream(await _response.Content.ReadAsByteArrayAsync({{cancellationToken}})),
                               FileName = _response.Content.Headers.ContentDisposition?.FileName?.Trim('"'),
                               Length = _response.Content.Headers.ContentLength,
-                              ETag = _response.Content.Headers.TryGetValues("ETag", out var _etag) ? _etag : null,
+                              ETag = _response.Content.Headers.TryGetValues("ETag", out var _etag) ? _etag.FirstOrDefault() : null,
                               LastModifiedUtc = _response.Content.Headers.LastModified?.UtcDateTime,
                           };
                   """);

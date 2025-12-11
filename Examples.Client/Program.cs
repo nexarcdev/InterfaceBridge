@@ -69,4 +69,10 @@ app.MapGet("/test/6", async ([FromServices]TestClient client) =>
     return await client.Put(Guid.Empty, file);
 });
 
+app.MapGet("/test/7", async ([FromServices]TestClient client) =>
+{
+    var file = await client.Download();
+    return Results.File(file.Content, file.ContentType, file.FileName);
+});
+
 await app.RunAsync();

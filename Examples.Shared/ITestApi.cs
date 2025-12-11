@@ -30,6 +30,9 @@ public interface ITestApi
     
     [Rest(HttpMethod.Post, "test")]
     Task<string> StringTest(string value);
+    
+    [Rest(HttpMethod.Get, "download")]
+    Task<FilePart> Download();
 }
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]

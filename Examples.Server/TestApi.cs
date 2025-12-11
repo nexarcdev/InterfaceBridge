@@ -24,6 +24,11 @@ public class TestApi : ITestApi
             ? Task.FromResult(id)
             : throw new HttpResponseException(HttpStatusCode.NotFound, "That file not found");
 
+    public Task<FilePart> Download()
+    {
+        return Task.FromResult(FilePart.Create([1, 2, 3], "test.txt", "text/plain"));
+    }
+    
     public Task<string> StringTest(string value)
     {
         Debug.Assert(value == "Hello, World!");
