@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Headers;
 using Examples.Shared;
 using NexArc.InterfaceBridge;
@@ -18,8 +19,10 @@ public class TestApi : ITestApi
     public Task<TestResponse> Post(Guid id, TestEnum e, TestRequest request) => 
         Task.FromResult(new TestResponse(id, request.FullName, request.Age, request.PocoData));
 
-    public Task<Guid> Put(Guid id, FilePart file) => 
-        Task.FromResult(id);
+    public Task<Guid> Put(Guid id, FilePart file) =>
+        id != Guid.Empty 
+            ? Task.FromResult(id)
+            : throw new HttpResponseException(HttpStatusCode.NotFound, "That file not found");
 
     public Task<string> StringTest(string value)
     {

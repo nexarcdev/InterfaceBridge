@@ -1,6 +1,7 @@
 ﻿using System.IO.Pipelines;
 using System.Reflection;
 using System.Text.Json;
+using Microsoft.Extensions.Primitives;
 
 namespace NexArc.InterfaceBridge.Server;
 
@@ -72,11 +73,25 @@ public static partial class RouteMapper
             }
 
             // Call the method
-            var task = (Task)method.Invoke(manager, arguments)!;
+            Task task;
 
             // Await
-            await task;
-
+            try
+            {
+                task = (Task)method.Invoke(manager, arguments)!;
+                await task;
+            }
+            catch (HttpResponseException ex)
+            {
+                await SetResponseFromException(context, ex);
+                return;
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException is HttpResponseException httpResponseException)
+            {
+                await SetResponseFromException(context, httpResponseException);
+                return;
+            }
+            
             // If Task<TResult>
             if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
             {
@@ -89,6 +104,15 @@ public static partial class RouteMapper
             // Otherwise return OK
             context.Response.StatusCode = 204;
         }
+    }
+
+    private static async Task SetResponseFromException(HttpContext context, HttpResponseException ex)
+    {
+        context.Response.StatusCode = (int)ex.Response.StatusCode;
+        if (ex.Response.Content.Headers.ContentType is not null)
+            context.Response.ContentType = ex.Response.Content.Headers.ContentType.ToString();
+        var stream = await ex.Response.Content.ReadAsByteArrayAsync(CancellationToken.None);
+        await context.Response.BodyWriter.WriteAsync(stream, CancellationToken.None);
     }
 
     private static async Task SetResponseContent(JsonSerializerOptions jsonSerializerOptions, object? result, HttpContext context)
@@ -156,7 +180,16 @@ public static partial class RouteMapper
             ContentType = file.ContentType,
             Content = file.OpenReadStream(),
             Length = file.Length,
-            FileName = file.FileName
+            FileName = file.FileName,
+            ETag = file.Headers.ETag,
+            LastModifiedUtc = LastModifiedToDateTime(file.Headers.LastModified)
         };
+    }
+
+    private static DateTime? LastModifiedToDateTime(StringValues lastModified)
+    {
+        var value = lastModified.FirstOrDefault();
+        if (string.IsNullOrEmpty(value)) return null;
+        return DateTime.TryParse(value, out var dateTime) ? dateTime.ToUniversalTime() : null;
     }
 }

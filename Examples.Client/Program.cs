@@ -56,4 +56,17 @@ app.MapGet("/test/5", async ([FromServices]TestClient client) =>
     return Results.Text($"Response: {response}");
 });
 
+app.MapGet("/test/6", async ([FromServices]TestClient client) =>
+{
+    var file = new FilePart()
+    {
+        Content = new MemoryStream(),
+        ContentType = "image/png",
+        FileName = "nothing.png",
+        Length = 0
+    };
+    
+    return await client.Put(Guid.Empty, file);
+});
+
 await app.RunAsync();

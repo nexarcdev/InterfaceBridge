@@ -1,6 +1,4 @@
-﻿using System.IO.Enumeration;
-
-namespace NexArc.InterfaceBridge;
+﻿namespace NexArc.InterfaceBridge;
 
 /// <summary>
 /// Represents a file part used in multipart form data uploads.
@@ -29,7 +27,7 @@ public sealed class FilePart : IDisposable, IAsyncDisposable
     public string? ContentType { get; set; }
     public long? Length { get; set; }
     public Stream Content { get; set; } = Stream.Null;
-    public DateTime LastModifiedUtc { get; set; }
+    public DateTime? LastModifiedUtc { get; set; }
     public string? ETag { get; set; }
     
     public void Dispose()
