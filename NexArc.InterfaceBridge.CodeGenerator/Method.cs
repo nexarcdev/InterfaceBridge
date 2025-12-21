@@ -131,7 +131,8 @@ public class Method
             var separator = Route.Contains("?") ? "&" : "?";
             foreach (var parameter in Parameters.Where(x => !x.IsInRoute && !x.IsFilePart && !x.IsCancellationToken))
             {
-                sb.AppendLine($"        _uri.AppendLine($\"{separator}{parameter.Name}={{(global::System.Uri.EscapeDataString({parameter.Serializer}))}}\");");
+                var serializer = @$"{parameter.Serializer} ?? """"";
+                sb.AppendLine($"        _uri.AppendLine($\"{separator}{parameter.Name}={{(global::System.Uri.EscapeDataString({serializer}))}}\");");
                 separator = "&";
             }
 
@@ -245,7 +246,7 @@ public class Method
             if (ReturnType.StartsWith(ClientDefinition.JsonPatchDocumentTypeName))
                 return
                     $"global::System.Text.Json.JsonSerializer.Deserialize<{ReturnType}>(_responseContent, {Bridge.JsonSerializerContext}.Default.JsonPatchDocument)";
-
+            
             if (returnSymbol.Kind == SymbolKind.ArrayType &&
                 returnSymbol is IArrayTypeSymbol arrayTypeSymbol)
                 return

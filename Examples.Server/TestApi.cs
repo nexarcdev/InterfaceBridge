@@ -8,8 +8,11 @@ namespace Examples.Server;
 
 public class TestApi : ITestApi
 {
-    public Task<TestResponse> Get(Guid id, TestEnum e, TestRequest request) =>
+    public Task<TestResponse> Get(Guid id, TestEnum? e, TestRequest request) =>
         Task.FromResult(new TestResponse(id, request.FullName, request.Age, request.PocoData));
+
+    public Task<string> NullTest(string email, string? code, string? token) =>
+        Task.FromResult($"{email} Code={code} Token={token}");
 
     public Task<TestResponse[]> Get(TestRequest[] requests) =>
         Task.FromResult(requests
@@ -29,7 +32,7 @@ public class TestApi : ITestApi
         return Task.FromResult(FilePart.Create([1, 2, 3], "test.txt", "text/plain"));
     }
     
-    public Task<string> StringTest(string value)
+    public Task<string> StringTest(string? value)
     {
         Debug.Assert(value == "Hello, World!");
         return Task.FromResult("World says hello!");

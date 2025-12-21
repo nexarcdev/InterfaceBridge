@@ -50,6 +50,9 @@ public class Argument
             if (parameterSymbol.Type.Kind == SymbolKind.ArrayType && parameterSymbol.Type is IArrayTypeSymbol arrayTypeSymbol)
                 return $"global::System.Text.Json.JsonSerializer.Serialize({Name}, {method.Bridge.JsonSerializerContext}.Default.{arrayTypeSymbol.ElementType.Name}Array)";
 
+            if (parameterSymbol.Type is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsGenericType && namedTypeSymbol.ConstructedFrom.Name == "Nullable")
+                return $"global::System.Text.Json.JsonSerializer.Serialize({Name}, {method.Bridge.JsonSerializerContext}.Default.Nullable{namedTypeSymbol.TypeArguments[0].Name})";
+            
             return $"global::System.Text.Json.JsonSerializer.Serialize({Name}, {method.Bridge.JsonSerializerContext}.Default.{parameterSymbol.Type.Name})";
         }
 

@@ -17,7 +17,10 @@ public record TestResponse(Guid TestId, string FullName, int Age, PocoTest PocoD
 public interface ITestApi
 {
     [Rest(HttpMethod.Get, "{id:guid}")]
-    Task<TestResponse> Get(Guid id, TestEnum e, TestRequest request);
+    Task<TestResponse> Get(Guid id, TestEnum? e, TestRequest request);
+    
+    [Rest(HttpMethod.Get, "nulltest")]
+    Task<string> NullTest(string email, string? code, string? token);
 
     [Rest(HttpMethod.Get, "all")]
     Task<TestResponse[]> Get(TestRequest[] requests);
@@ -29,7 +32,7 @@ public interface ITestApi
     Task<Guid> Put(Guid id, FilePart file);
     
     [Rest(HttpMethod.Post, "test")]
-    Task<string> StringTest(string value);
+    Task<string> StringTest(string? value);
     
     [Rest(HttpMethod.Get, "download")]
     Task<FilePart> Download();
@@ -41,4 +44,5 @@ public interface ITestApi
 [JsonSerializable(typeof(TestRequest[]))]
 [JsonSerializable(typeof(TestResponse))]
 [JsonSerializable(typeof(TestResponse[]))]
+[JsonSerializable(typeof(TestEnum?))]
 public partial class TestJsonContext : JsonSerializerContext { }
