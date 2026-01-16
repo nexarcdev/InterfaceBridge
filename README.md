@@ -164,6 +164,58 @@ The framework automatically selects the appropriate content type:
 
 ## Advanced Features
 
+### Authorization Attributes
+
+Server endpoints created via InterfaceBridge can honor `[Authorize]` and `[AllowAnonymous]` on interface or implementation methods. Add standard ASP.NET Core authentication/authorization middleware, then apply attributes on your server implementation:
+
+```csharp
+using Microsoft.AspNetCore.Authorization;
+
+public class AuthApi : IAuthApi
+{
+    [Authorize]
+    public Task<string> Authorize() => Task.FromResult("Authorized");
+
+    [Authorize(Roles = "Admin")]
+    public Task<string> AdminOnly() => Task.FromResult("Admin Authorized");
+
+    [AllowAnonymous]
+    public Task<string> Anonymous() => Task.FromResult("Anonymous Authorized");
+}
+```
+
+To access the current user in your server implementation, inject `IHttpContextAccessor`:
+
+```csharp
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+
+public class AuthApi(IHttpContextAccessor httpContextAccessor) : IAuthApi
+{
+    public Task<string> WhoAmI()
+    {
+        var user = httpContextAccessor.HttpContext?.User;
+        var name = user?.Identity?.Name ?? "anonymous";
+        var roles = user?.FindAll(ClaimTypes.Role).Select(c => c.Value) ?? [];
+        return Task.FromResult($"{name} ({string.Join(", ", roles)})");
+    }
+}
+```
+
+Ensure authentication/authorization is configured in your server startup:
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddAuthentication().AddCookie();
+builder.Services.AddAuthorization();
+
+var app = builder.Build();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapInterfaceBridges();
+```
+
 ### File Uploads
 
 Use `FilePart` for file uploads (automatically switches to multipart/form-data):

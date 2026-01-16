@@ -1,6 +1,7 @@
 ﻿using System.IO.Pipelines;
 using System.Reflection;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Primitives;
 
 namespace NexArc.InterfaceBridge.Server;
@@ -8,7 +9,7 @@ namespace NexArc.InterfaceBridge.Server;
 public static partial class RouteMapper
 {
     public static void Map(WebApplication app, Type managerType, MethodInfo method,
-        JsonSerializerOptions jsonSerializerOptions)
+        JsonSerializerOptions jsonSerializerOptions, Type? managerImplementationType = null)
     {
         var connector = managerType.GetCustomAttribute<RestConnectorAttribute>();
         var rest = method.GetCustomAttribute<RestAttribute>()
@@ -25,7 +26,8 @@ public static partial class RouteMapper
 
         var parameterParsers = BuildParameterList(jsonSerializerOptions, parameters);
 
-        app.MapMethods(pattern, httpMethod, (Func<HttpContext, Task>)Handler);
+        var endpointBuilder = app.MapMethods(pattern, httpMethod, (Func<HttpContext, Task>)Handler);
+        ApplyAuthorizationMetadata(endpointBuilder, managerType, method, managerImplementationType);
         return;
 
         // This should work like a Controller, where the method definition is used and an instance of TManagerInterface is created in scope of the request
@@ -104,6 +106,64 @@ public static partial class RouteMapper
             // Otherwise return OK
             context.Response.StatusCode = 204;
         }
+    }
+
+    private static void ApplyAuthorizationMetadata(RouteHandlerBuilder endpointBuilder, Type managerType,
+        MethodInfo interfaceMethod, Type? managerImplementationType)
+    {
+        var authorizeData = new List<IAuthorizeData>();
+        var hasAllowAnonymous = false;
+
+        AddAuthorizationMetadata(managerType, authorizeData, ref hasAllowAnonymous);
+        AddAuthorizationMetadata(interfaceMethod, authorizeData, ref hasAllowAnonymous);
+
+        if (managerImplementationType is not null)
+        {
+            AddAuthorizationMetadata(managerImplementationType, authorizeData, ref hasAllowAnonymous);
+            var implementationMethod = ResolveImplementationMethod(managerType, interfaceMethod, managerImplementationType);
+            if (implementationMethod is not null)
+                AddAuthorizationMetadata(implementationMethod, authorizeData, ref hasAllowAnonymous);
+        }
+
+        if (hasAllowAnonymous)
+        {
+            endpointBuilder.AllowAnonymous();
+            return;
+        }
+
+        if (authorizeData.Count > 0)
+            endpointBuilder.RequireAuthorization(authorizeData.ToArray());
+    }
+
+    private static void AddAuthorizationMetadata(MemberInfo member, List<IAuthorizeData> authorizeData,
+        ref bool hasAllowAnonymous)
+    {
+        foreach (var attribute in member.GetCustomAttributes(true))
+        {
+            if (attribute is IAllowAnonymous)
+                hasAllowAnonymous = true;
+
+            if (attribute is IAuthorizeData authorize)
+                authorizeData.Add(authorize);
+        }
+    }
+
+    private static MethodInfo? ResolveImplementationMethod(Type managerType, MethodInfo interfaceMethod,
+        Type managerImplementationType)
+    {
+        if (managerType.IsInterface && managerType.IsAssignableFrom(managerImplementationType))
+        {
+            var map = managerImplementationType.GetInterfaceMap(managerType);
+            for (var i = 0; i < map.InterfaceMethods.Length; i++)
+            {
+                if (map.InterfaceMethods[i] == interfaceMethod)
+                    return map.TargetMethods[i];
+            }
+        }
+
+        var parameterTypes = interfaceMethod.GetParameters().Select(parameter => parameter.ParameterType).ToArray();
+        return managerImplementationType.GetMethod(interfaceMethod.Name,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, parameterTypes, null);
     }
 
     private static async Task SetResponseFromException(HttpContext context, HttpResponseException ex)
