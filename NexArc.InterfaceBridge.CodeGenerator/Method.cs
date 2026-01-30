@@ -12,6 +12,10 @@ public class Method
 {
     private const string RestAttributeName = "RestAttribute";
     private const string FilePartName = "global::NexArc.InterfaceBridge.FilePart";
+    private const string TaskTypeName = "Task";
+    private const string TaskNamespaceName = "System.Threading.Tasks";
+    private const string AsyncEnumerableTypeName = "IAsyncEnumerable";
+    private const string AsyncEnumerableNamespaceName = "System.Collections.Generic";
 
     public string? ReturnType { get; }
     public string? ReturnTypeSerializer { get; }
@@ -24,6 +28,9 @@ public class Method
     public bool IsAcceptsFile { get; }
     public Argument[] Parameters { get; }
     public bool ReturnTypeNullProtection { get; }
+    public bool IsAsyncEnumerableReturn { get; }
+    public string? AsyncEnumerableItemType { get; }
+    public bool AsyncEnumerableItemNullProtection { get; }
 
     public Method(IMethodSymbol methodSymbol, Bridge bridge)
     {
@@ -39,19 +46,42 @@ public class Method
         Bridge = bridge;
 
         var returnType = (INamedTypeSymbol?)methodSymbol.ReturnType;
-        if (returnType!.Name != "Task")
-            throw new InvalidOperationException("Only Task methods are supported.");
-        var resultType = returnType?.IsGenericType == true
-            ? returnType.TypeArguments[0]
-            : null;
-        ReturnType = resultType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        ReturnTypeSerializer = BuildSerializer(resultType);
-        ReturnTypeNullProtection = resultType is
-            { NullableAnnotation: NullableAnnotation.NotAnnotated, IsValueType: false };
+        if (returnType is null)
+            throw new InvalidOperationException("Only Task or IAsyncEnumerable return types are supported.");
+
+        if (returnType.Name == TaskTypeName && returnType.ContainingNamespace?.ToDisplayString() == TaskNamespaceName)
+        {
+            var resultType = returnType.IsGenericType
+                ? returnType.TypeArguments[0]
+                : null;
+
+            if (resultType is INamedTypeSymbol namedResultType
+                && namedResultType.Name == AsyncEnumerableTypeName
+                && namedResultType.ContainingNamespace?.ToDisplayString() == AsyncEnumerableNamespaceName)
+                throw new InvalidOperationException("Task<IAsyncEnumerable<T>> is not supported. Use IAsyncEnumerable<T> directly.");
+
+            ReturnType = resultType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            ReturnTypeSerializer = BuildSerializer(resultType);
+            ReturnTypeNullProtection = resultType is { IsValueType: false }
+                                       && resultType.NullableAnnotation != NullableAnnotation.Annotated;
+        }
+        else if (returnType.Name == AsyncEnumerableTypeName
+                 && returnType.ContainingNamespace?.ToDisplayString() == AsyncEnumerableNamespaceName)
+        {
+            IsAsyncEnumerableReturn = true;
+            var itemType = returnType.TypeArguments[0];
+            AsyncEnumerableItemType = itemType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            AsyncEnumerableItemNullProtection = itemType is { IsValueType: false }
+                                               && itemType.NullableAnnotation != NullableAnnotation.Annotated;
+        }
+        else
+        {
+            throw new InvalidOperationException("Only Task or IAsyncEnumerable return types are supported.");
+        }
 
         IsAcceptsFile = methodSymbol.Parameters.Any(x =>
             x.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == FilePartName);
-        IsReturnsFile = ReturnType == FilePartName;
+        IsReturnsFile = !IsAsyncEnumerableReturn && ReturnType == FilePartName;
 
         if (HttpMethod == HttpMethod.Get)
         {
@@ -104,7 +134,12 @@ public class Method
 
     public void BuildSource(StringBuilder sb)
     {
-        sb.AppendLine($"    public async {MethodSymbol.ToDisplayString(MethodFormat)}");
+        var signature = MethodSymbol.ToDisplayString(MethodFormat);
+        if (IsAsyncEnumerableReturn && Parameters.Any(x => x.IsCancellationToken))
+            signature = signature.Replace("global::System.Threading.CancellationToken ",
+                "[global::System.Runtime.CompilerServices.EnumeratorCancellation] global::System.Threading.CancellationToken ");
+
+        sb.AppendLine($"    public async {signature}");
         sb.AppendLine("    {");
         BuildRequest(sb);
         BuildResponse(sb);
@@ -195,6 +230,24 @@ public class Method
     {
         var cancellationToken = Parameters.FirstOrDefault(x => x.IsCancellationToken)?.Name ?? "CancellationToken.None";
 
+        if (IsAsyncEnumerableReturn)
+        {
+            sb.AppendLine($"        using var _response = await this.HttpClient.SendAsync(_request, global::System.Net.Http.HttpCompletionOption.ResponseHeadersRead, {cancellationToken});");
+            sb.AppendLine("        _response.EnsureSuccessStatusCode();");
+            sb.AppendLine($"        await using var _responseStream = await _response.Content.ReadAsStreamAsync({cancellationToken});");
+            sb.AppendLine($"        var _items = {BuildAsyncEnumerableDeserializer(cancellationToken)};");
+            sb.AppendLine("        await foreach (var _item in _items)");
+            sb.AppendLine("        {");
+            if (AsyncEnumerableItemNullProtection)
+            {
+                sb.AppendLine("            if (_item is null)");
+                sb.AppendLine("                throw new global::System.InvalidOperationException(\"Response item was null.\");");
+            }
+            sb.AppendLine("            yield return _item!;");
+            sb.AppendLine("        }");
+            return;
+        }
+
         sb.AppendLine($"        var _response = await this.HttpClient.SendAsync(_request, {cancellationToken});");
         sb.AppendLine("        _response.EnsureSuccessStatusCode();");
 
@@ -222,10 +275,24 @@ public class Method
             sb.Append($"        return {ReturnTypeSerializer}".TrimEnd());
             if (ReturnTypeNullProtection)
                 sb.AppendLine()
-                    .AppendLine("            ?? throw new InvalidOperationException(\"Response was null.\");");
+                    .AppendLine("            ?? throw new global::System.InvalidOperationException(\"Response was null.\");");
             else
                 sb.AppendLine(";");
         }
+    }
+
+    private string BuildAsyncEnumerableDeserializer(string cancellationToken)
+    {
+        if (string.IsNullOrEmpty(AsyncEnumerableItemType))
+            return "throw new global::System.InvalidOperationException(\"Async enumerable type missing.\")";
+
+        if (Bridge.HasJsonSerializerOptions)
+            return $"global::System.Text.Json.JsonSerializer.DeserializeAsyncEnumerable<{AsyncEnumerableItemType}>(_responseStream, this.JsonSerializerOptions, {cancellationToken})";
+
+        if (string.IsNullOrEmpty(Bridge.JsonSerializerContext))
+            return $"global::System.Text.Json.JsonSerializer.DeserializeAsyncEnumerable<{AsyncEnumerableItemType}>(_responseStream, global::System.Text.Json.JsonSerializerOptions.Web, {cancellationToken})";
+
+        return $"global::System.Text.Json.JsonSerializer.DeserializeAsyncEnumerable<{AsyncEnumerableItemType}>(_responseStream, {Bridge.JsonSerializerContext}.Default.Options, {cancellationToken})";
     }
 
     private string? BuildSerializer(ITypeSymbol? returnSymbol)

@@ -8,6 +8,9 @@ namespace Examples.Server;
 
 public class TestApi : ITestApi
 {
+    private readonly Guid guid = Guid.Parse("0000000A-000B-000C-000D-00000000000E");
+
+
     public Task<TestResponse> Get(Guid id, TestEnum? e, TestRequest request) =>
         Task.FromResult(new TestResponse(id, request.FullName, request.Age, request.PocoData));
 
@@ -16,7 +19,7 @@ public class TestApi : ITestApi
 
     public Task<TestResponse[]> Get(TestRequest[] requests) =>
         Task.FromResult(requests
-            .Select(request => new TestResponse(Guid.NewGuid(), request.FullName, request.Age, request.PocoData))
+            .Select(request => new TestResponse(guid, request.FullName, request.Age, request.PocoData))
             .ToArray());
 
     public Task<TestResponse> Post(Guid id, TestEnum e, TestRequest request) => 
@@ -36,5 +39,18 @@ public class TestApi : ITestApi
     {
         Debug.Assert(value == "Hello, World!");
         return Task.FromResult("World says hello!");
+    }
+
+    public async IAsyncEnumerable<TestResponse> Stream(int count, TestRequest request, int delayMs = 50,
+        [global::System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (delayMs > 0)
+                await Task.Delay(delayMs, cancellationToken);
+
+            yield return new TestResponse(guid, $"{request.FullName} #{i + 1}", request.Age, request.PocoData);
+        }
     }
 }

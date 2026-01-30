@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using NexArc.InterfaceBridge;
 
@@ -36,6 +38,9 @@ public interface ITestApi
     
     [Rest(HttpMethod.Get, "download")]
     Task<FilePart> Download();
+
+    [Rest(HttpMethod.Get, "stream/{count}")]
+    IAsyncEnumerable<TestResponse> Stream(int count, TestRequest request, int delayMs = 50, CancellationToken cancellationToken = default);
 }
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]

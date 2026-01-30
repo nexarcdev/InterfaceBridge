@@ -27,6 +27,8 @@ builder.Services.AddHttpClient<AuthClient>(client => client.BaseAddress = new Ur
 
 var app = builder.Build();
 
+var guid = Guid.Parse("a0000000-b000-c000-d000-e00000000000");
+
 app.MapDefaultEndpoints();
 
 app.MapGet("/", async ([FromServices]HelloClient client) => 
@@ -35,7 +37,7 @@ app.MapGet("/", async ([FromServices]HelloClient client) =>
 app.MapGet("/test/1", async ([FromServices]TestClient client) =>
 {
     var request = new TestRequest("Bob", 42, new PocoTest("Bobbie", 20));
-    return await client.Get(Guid.NewGuid(), TestEnum.B, request);
+    return await client.Get(guid, TestEnum.B, request);
 });
 
 app.MapGet("/test/2", async ([FromServices]TestClient client) =>
@@ -47,7 +49,7 @@ app.MapGet("/test/2", async ([FromServices]TestClient client) =>
 app.MapGet("/test/3", async ([FromServices]TestClient client) =>
 {
     var request = new TestRequest("Bob", 42, new PocoTest("Bobbie", 20));
-    return await client.Post(Guid.NewGuid(), TestEnum.B, request);
+    return await client.Post(guid, TestEnum.B, request);
 });
 
 app.MapGet("/test/4", async ([FromServices]TestClient client) =>
@@ -60,7 +62,7 @@ app.MapGet("/test/4", async ([FromServices]TestClient client) =>
         Length = 0
     };
     
-    return await client.Put(Guid.NewGuid(), file);
+    return await client.Put(guid, file);
 });
 
 app.MapGet("/test/5", async ([FromServices]TestClient client) =>
@@ -80,13 +82,28 @@ app.MapGet("/test/6", async ([FromServices]TestClient client) =>
         Length = 0
     };
     
-    return await client.Put(Guid.Empty, file);
+    return await client.Put(guid, file);
 });
 
 app.MapGet("/test/7", async ([FromServices]TestClient client) =>
 {
     var file = await client.Download();
     return Results.File(file.Content, file.ContentType, file.FileName);
+});
+
+app.MapGet("/test/stream", async (HttpContext httpContext, [FromServices]TestClient client) =>
+{
+    var request = new TestRequest("Streamed Bob", 42, new PocoTest("Streamed Bobbie", 20));
+    var log = new StringBuilder();
+
+    httpContext.Response.Headers.ContentType = "text/plain; charset=utf-8";
+    await using var writer = new StreamWriter(httpContext.Response.Body, Encoding.UTF8);
+    
+    await foreach (var item in client.Stream(5, request, 250))
+    {
+        await writer.WriteLineAsync($"{item.TestId}: {item.FullName} ({item.Age})");
+        await writer.FlushAsync();
+    }
 });
 
 app.MapGet("/test/auth", async ([FromServices]AuthClient client) =>

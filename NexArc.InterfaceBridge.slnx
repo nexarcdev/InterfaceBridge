@@ -1,0 +1,12 @@
+<Solution>
+  <Project Path="Examples.AppHost/Examples.AppHost.csproj" />
+  <Project Path="Examples.Client/Examples.Client.csproj" />
+  <Project Path="Examples.Server/Examples.Server.csproj" />
+  <Project Path="Examples.ServiceDefaults/Examples.ServiceDefaults.csproj" />
+  <Project Path="Examples.Shared/Examples.Shared.csproj" />
+  <Project Path="Examples.Tests/Examples.Tests.csproj" />
+  <Project Path="NexArc.InterfaceBridge.CodeGenerator.Tests/NexArc.InterfaceBridge.CodeGenerator.Tests.csproj" />
+  <Project Path="NexArc.InterfaceBridge.CodeGenerator/NexArc.InterfaceBridge.CodeGenerator.csproj" />
+  <Project Path="NexArc.InterfaceBridge.Server/NexArc.InterfaceBridge.Server.csproj" />
+  <Project Path="NexArc.InterfaceBridge/NexArc.InterfaceBridge.csproj" />
+</Solution>

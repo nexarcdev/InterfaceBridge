@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -10,7 +11,7 @@ public static class WebApplicationExtensions
     private record InterfaceBridgeDefinition(Type ManagerInterface, Type? ManagerImplementation,
         JsonSerializerOptions? JsonSerializerOptions);
 
-    public static IServiceCollection AddInterfaceBridge<TManagerInterface, TManagerImplementation>(
+    public static IServiceCollection AddInterfaceBridge<TManagerInterface, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]TManagerImplementation>(
         this IServiceCollection serviceCollection, JsonSerializerOptions? jsonSerializerOptions = null)
         where TManagerImplementation : class, TManagerInterface
         where TManagerInterface : class

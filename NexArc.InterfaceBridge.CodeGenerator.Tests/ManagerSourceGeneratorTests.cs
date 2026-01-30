@@ -16,6 +16,7 @@ public class ManagerSourceGeneratorTests
             .Concat([
                 MetadataReference.CreateFromFile(typeof(System.Text.Json.JsonDocument).GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(System.Net.Http.HttpClient).GetTypeInfo().Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(System.IO.Pipelines.PipeReader).GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(RestConnectorAttribute).GetTypeInfo().Assembly.Location)
             ])
             .ToArray();
@@ -24,6 +25,13 @@ public class ManagerSourceGeneratorTests
             [CSharpSyntaxTree.ParseText(source)],
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+    }
+
+    private static void AssertNoDiagnostics(IEnumerable<Diagnostic> diagnostics)
+    {
+        var diagnosticList = diagnostics as Diagnostic[] ?? diagnostics.ToArray();
+        if (diagnosticList.Length > 0)
+            Assert.Fail(string.Join(Environment.NewLine, diagnosticList));
     }
     
     [TestMethod]
@@ -73,9 +81,9 @@ public class ManagerSourceGeneratorTests
             .Create(generator)
             .RunGeneratorsAndUpdateCompilation(inputCompilation, out var outputCompilation, out var diagnostics);
 
-        Assert.IsEmpty(diagnostics); // No diagnostics created by the generators
+        AssertNoDiagnostics(diagnostics); // No diagnostics created by the generators
         Assert.HasCount(2, outputCompilation.SyntaxTrees); // Two syntax trees: 'inputCompilation' and the one added by the generator
-        Assert.IsEmpty(outputCompilation.GetDiagnostics()); // Verify the compilation with the added source has no diagnostics
+        AssertNoDiagnostics(outputCompilation.GetDiagnostics()); // Verify the compilation with the added source has no diagnostics
     }
 
     [TestMethod]
@@ -123,9 +131,9 @@ public class ManagerSourceGeneratorTests
             .Create(generator)
             .RunGeneratorsAndUpdateCompilation(inputCompilation, out var outputCompilation, out var diagnostics);
 
-        Assert.IsEmpty(diagnostics); // No diagnostics created by the generators
+        AssertNoDiagnostics(diagnostics); // No diagnostics created by the generators
         Assert.HasCount(2, outputCompilation.SyntaxTrees); // Two syntax trees: 'inputCompilation' and the one added by the generator
-        Assert.IsEmpty(outputCompilation.GetDiagnostics()); // Verify the compilation with the added source has no diagnostics
+        AssertNoDiagnostics(outputCompilation.GetDiagnostics()); // Verify the compilation with the added source has no diagnostics
     }
 
     [TestMethod]
@@ -173,9 +181,9 @@ public class ManagerSourceGeneratorTests
             .Create(generator)
             .RunGeneratorsAndUpdateCompilation(inputCompilation, out var outputCompilation, out var diagnostics);
 
-        Assert.IsEmpty(diagnostics); // No diagnostics created by the generators
+        AssertNoDiagnostics(diagnostics); // No diagnostics created by the generators
         Assert.HasCount(2, outputCompilation.SyntaxTrees); // Two syntax trees: 'inputCompilation' and the one added by the generator
-        Assert.IsEmpty(outputCompilation.GetDiagnostics()); // Verify the compilation with the added source has no diagnostics
+        AssertNoDiagnostics(outputCompilation.GetDiagnostics()); // Verify the compilation with the added source has no diagnostics
     }
     
     [TestMethod]
@@ -242,7 +250,7 @@ public class ManagerSourceGeneratorTests
             .Create(generator)
             .RunGeneratorsAndUpdateCompilation(inputCompilation, out var outputCompilation, out var diagnostics);
 
-        Assert.IsEmpty(diagnostics); // No diagnostics created by the generators
+        AssertNoDiagnostics(diagnostics); // No diagnostics created by the generators
         Assert.HasCount(2, outputCompilation.SyntaxTrees); // Two syntax trees: 'inputCompilation' and the one added by the generator
         
         foreach (var error in outputCompilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error))
@@ -333,10 +341,57 @@ public class ManagerSourceGeneratorTests
             .Create(generator)
             .RunGeneratorsAndUpdateCompilation(inputCompilation, out var outputCompilation, out var diagnostics);
 
-        Assert.IsEmpty(diagnostics); // No diagnostics created by the generators
+        AssertNoDiagnostics(diagnostics); // No diagnostics created by the generators
         Assert.HasCount(2, outputCompilation.SyntaxTrees); // Two syntax trees: 'inputCompilation' and the one added by the generator
         
         foreach (var error in outputCompilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error))
             Assert.Fail(error.ToString());
+    }
+
+    [TestMethod]
+    public void AsyncEnumerable_Works()
+    {
+        var inputCompilation = CreateCompilation(
+            """
+            using System.Collections.Generic;
+            using System.Net.Http;
+            using System.Threading;
+            using NexArc.InterfaceBridge;
+
+            public record StreamItem(int Index, string Label);
+
+            [RestConnector("api/stream")]
+            public interface IStreamApi
+            {
+                [Rest(NexArc.InterfaceBridge.HttpMethod.Get, "items")]
+                IAsyncEnumerable<StreamItem> GetItems(int count, CancellationToken cancellationToken = default);
+            }
+
+            [Bridge(typeof(IStreamApi))]
+            public partial class StreamClient
+            {
+                public HttpClient HttpClient { get; }
+
+                public StreamClient(HttpClient httpClient)
+                {
+                    HttpClient = httpClient;
+                }
+            }
+            """);
+
+        var compilationDiagnostics = inputCompilation.GetDiagnostics();
+
+        foreach (var error in compilationDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
+            Assert.Fail(error.ToString());
+
+        var generator = new ManagerSourceGenerator();
+
+        CSharpGeneratorDriver
+            .Create(generator)
+            .RunGeneratorsAndUpdateCompilation(inputCompilation, out var outputCompilation, out var diagnostics);
+
+        AssertNoDiagnostics(diagnostics);
+        Assert.HasCount(2, outputCompilation.SyntaxTrees);
+        AssertNoDiagnostics(outputCompilation.GetDiagnostics());
     }
 }

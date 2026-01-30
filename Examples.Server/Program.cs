@@ -28,7 +28,6 @@ builder.Services
         };
     });
 builder.Services.AddAuthorization();
-
 // Register the InterfaceBridge for IHelloApi and its implementation
 builder.Services.AddInterfaceBridge<IHelloApi, HelloApi>(jsonSerializerOptions: JsonSerializerOptions.Web);
 builder.Services.AddInterfaceBridge<ITestApi, TestApi>(jsonSerializerOptions: TestJsonContext.Default.Options);

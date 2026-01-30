@@ -8,6 +8,10 @@ namespace NexArc.InterfaceBridge.Server;
 
 public static partial class RouteMapper
 {
+    private static readonly MethodInfo SerializeAsyncEnumerableCoreMethod =
+        typeof(RouteMapper).GetMethod(nameof(SerializeAsyncEnumerableCore), BindingFlags.NonPublic | BindingFlags.Static)
+        ?? throw new InvalidOperationException("Missing SerializeAsyncEnumerableCore method.");
+
     public static void Map(WebApplication app, Type managerType, MethodInfo method,
         JsonSerializerOptions jsonSerializerOptions, Type? managerImplementationType = null)
     {
@@ -74,12 +78,17 @@ public static partial class RouteMapper
                 }
             }
 
-            // Call the method
-            Task task;
+            Task? task = null;
 
-            // Await
             try
             {
+                if (IsAsyncEnumerableReturn(returnType))
+                {
+                    var asyncResult = method.Invoke(manager, arguments);
+                    await SetResponseAsyncEnumerable(jsonSerializerOptions, asyncResult, returnType, context);
+                    return;
+                }
+
                 task = (Task)method.Invoke(manager, arguments)!;
                 await task;
             }
@@ -189,6 +198,40 @@ public static partial class RouteMapper
             await context.Response.WriteAsJsonAsync(result, jsonSerializerOptions);
         }
     }
+
+    private static async Task SetResponseAsyncEnumerable(JsonSerializerOptions jsonSerializerOptions, object? result,
+        Type returnType, HttpContext context)
+    {
+        context.Response.ContentType = "application/json";
+        if (result is null)
+        {
+            await context.Response.WriteAsync("[]", context.RequestAborted);
+            return;
+        }
+
+        var itemType = returnType.GetGenericArguments()[0];
+        var serializer = SerializeAsyncEnumerableCoreMethod.MakeGenericMethod(itemType);
+        var task = (Task)serializer.Invoke(null,
+            [context.Response.BodyWriter, result, jsonSerializerOptions, context.RequestAborted])!;
+        await task;
+    }
+
+    private static async Task SerializeAsyncEnumerableCore<T>(PipeWriter responseWriter, IAsyncEnumerable<T> items,
+        JsonSerializerOptions jsonSerializerOptions, CancellationToken cancellationToken)
+    {
+        using var writer = new Utf8JsonWriter(responseWriter);
+        writer.WriteStartArray();
+        await foreach (var item in items.WithCancellation(cancellationToken))
+        {
+            JsonSerializer.Serialize(writer, item, jsonSerializerOptions);
+            await responseWriter.FlushAsync(cancellationToken);
+        }
+        writer.WriteEndArray();
+        await responseWriter.FlushAsync(cancellationToken);
+    }
+
+    private static bool IsAsyncEnumerableReturn(Type returnType) =>
+        returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(IAsyncEnumerable<>);
 
     private static Func<string, object?>[] BuildParameterList(JsonSerializerOptions jsonSerializerOptions,
         ParameterInfo[] parameters)
